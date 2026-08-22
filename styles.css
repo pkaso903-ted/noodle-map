@@ -36,6 +36,7 @@
 }
 :root{ --tb:calc(58px + env(safe-area-inset-bottom)); }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none !important}
 html,body{margin:0;padding:0;height:100%}
 body{
   background:var(--bg);color:var(--tx);
@@ -184,18 +185,18 @@ button,input,select,textarea{font-family:inherit;color:inherit}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .leaflet-div-icon{background:none !important;border:0 !important}
-.nmark{position:relative;width:auto !important;height:auto !important;transform:translate(-50%,-100%);
-  display:flex;flex-direction:column;align-items:center;pointer-events:auto;cursor:pointer}
-.nmark .pin{width:30px;height:30px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);
+.nmark{position:relative;width:30px !important;height:30px !important;cursor:pointer}
+.nmark .pin{position:absolute;top:0;left:0;width:30px;height:30px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);
   display:flex;align-items:center;justify-content:center;background:#fff;border:2.5px solid var(--pt);
   box-shadow:var(--shadow)}
 .nmark .pin em{transform:rotate(45deg);font-style:normal;font-size:14px;line-height:1}
-.nmark .lb{margin-top:3px;max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+.nmark .lb{position:absolute;top:34px;left:50%;transform:translateX(-50%);pointer-events:none;
+  max-width:108px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   background:var(--pill);color:var(--pillTx);font-size:10.5px;font-weight:800;border-radius:5px;padding:2px 5px;
   border:1px solid rgba(255,255,255,.14)}
 .nmark.visited .pin{border-color:var(--pt2);background:var(--pt2)}
-.nmark.mich .pin::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:var(--gold);border:1.5px solid var(--bg)}
-.nmark.on .pin{transform:rotate(-45deg) scale(1.25);z-index:20}
+.nmark.mich .pin::after{content:"";position:absolute;top:-4px;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--gold);border:1.5px solid var(--bg)}
+.nmark.on .pin{transform:rotate(-45deg) scale(1.3);z-index:20}
 @media (min-width:720px){
   .card{margin:8px auto;max-width:640px}
   .list-head{max-width:640px;margin:0 auto}
