@@ -13,6 +13,20 @@ var AXES = [
  {k:'value', n:'가성비', d:'가격 대비 만족'},
  {k:'again', n:'재방문 의사', d:'또 오고 싶은가'}
 ];
+var THEMES = [
+ {k:'warm', n:'웜그레이', c:['#f3efe8','#ffffff','#dd5628'], meta:'#faf8f4'},
+ {k:'green', n:'딥그린', c:['#0f1c18','#1b332c','#f2764a'], meta:'#0f1c18'},
+ {k:'dark', n:'미드나잇', c:['#111114','#1f1f27','#ff6b35'], meta:'#111114'}
+];
+function applyTheme(k){
+ if(!THEMES.some(function(t){return t.k===k;})) k='warm';
+ document.documentElement.setAttribute('data-theme', k);
+ var m=document.querySelector('meta[name="theme-color"]');
+ var th=THEMES.filter(function(t){return t.k===k;})[0];
+ if(m&&th) m.setAttribute('content', th.meta);
+ try{ localStorage.setItem('noodlemap.theme', k); }catch(e){}
+}
+function curTheme(){ try{ return localStorage.getItem('noodlemap.theme') || 'warm'; }catch(e){ return 'warm'; } }
 var PLACES = [], MY = {}, MAP = null, MARKERS = [], PROVIDER = null, MYPOS = null, CUR = null;
 var F = {q:'', g:[], a:[], flag:[], sort:'reco'};
 
@@ -256,6 +270,9 @@ function renderInfo(){
   +'<p><b>아이폰(Safari)</b></p><ol><li>하단 공유 버튼 <b>⬆️</b> 탭</li><li>“홈 화면에 추가” 선택</li><li>“추가” 탭</li></ol>'
   +'<p style="margin-top:10px"><b>안드로이드(Chrome)</b></p><ol><li>우측 상단 <b>⋮</b> 탭</li><li>“홈 화면에 추가” 또는 “앱 설치” 선택</li></ol>'
   +'<button class="infobtn pri" id="btInstall" style="display:none">앱으로 설치하기</button></div>'
+  +'<div class="infosec"><h3>🎨 화면 테마</h3><p>지도와 어울리는 색조합을 골라봐. 선택은 이 브라우저에 저장돼.</p><div class="themebox">'
+  + THEMES.map(function(t){ return '<button class="themebtn'+(curTheme()===t.k?' on':'')+'" data-th="'+t.k+'"><span class="sw">'+t.c.map(function(c){return '<i style="background:'+c+'"></i>';}).join('')+'</span>'+t.n+'</button>'; }).join('')
+  + '</div></div>'
   +'<div class="infosec"><h3>💾 내 평가 백업</h3><p>평가 기록은 이 브라우저에만 저장돼. 폰을 바꾸거나 브라우저를 지우면 사라지니 가끔 백업해줘. 현재 <b>'+n+'곳</b> 저장됨.</p>'
   +'<button class="infobtn" id="btExport">JSON으로 내보내기</button>'
   +'<button class="infobtn" id="btImport">JSON 불러오기</button>'
@@ -264,6 +281,7 @@ function renderInfo(){
   +'<div class="infosec"><h3>📊 데이터</h3><p>네이버 지도 기준 · 총 <b>'+PLACES.length+'곳</b> · 기준일 <b>'+(window.__UPDATED||'')+'</b><br>범위: 연남 · 홍대(서교·동교) · 합정 · 망원 · 상수 · 성산<br>평점/리뷰수/영업시간/메뉴가격은 수집 시점 기준이라 실제와 다를 수 있어. 방문 전 네이버 지도에서 한 번 더 확인해줘.</p></div>'
   +'<div class="infosec"><h3>🗺️ 지도 엔진</h3><p id="engineTxt"></p></div>';
  $('#engineTxt').textContent = PROVIDER==='naver' ? '네이버 지도 API 사용중' : (PROVIDER==='leaflet' ? 'OpenStreetMap 사용중 (config.js에 네이버 키를 넣으면 네이버 지도로 바뀜)' : '지도 로딩 실패');
+ document.querySelectorAll('.themebtn').forEach(function(b){ b.onclick=function(){ applyTheme(b.dataset.th); renderInfo(); toast('테마를 바꿨어'); }; });
  $('#btExport').onclick = function(){
   var blob = new Blob([JSON.stringify({app:'noodlemap', v:1, exported:new Date().toISOString(), data:MY}, null, 2)], {type:'application/json'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='noodlemap-backup.json'; a.click();
@@ -368,6 +386,7 @@ function tab(name){
 }
 
 function boot(){
+ applyTheme(curTheme());
  loadMy();
  fetch('data.json?v=' + (window.__V||'1')).then(function(r){return r.json();}).then(function(j){
   PLACES = j.places; window.__UPDATED = j.updated;
