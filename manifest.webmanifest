@@ -1,0 +1,32 @@
+{
+  "name": "면요리 지도 · 홍대 연남 합정 망원",
+  "short_name": "면요리 지도",
+  "description": "연남·홍대·합정·망원 라멘/면요리 맛집 지도와 나만의 평가표",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111114",
+  "theme_color": "#1b1b1f",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
