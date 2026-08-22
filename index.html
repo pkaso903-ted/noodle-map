@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>면요리 지도 · 홍대 연남 합정 망원</title>
+<meta name="description" content="연남·홍대·합정·망원 라멘/면요리 맛집 지도. 영업시간, 메뉴, 미쉐린 정보와 나만의 평가표.">
+<meta name="theme-color" content="#1b1b1f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="면요리 지도">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css?v=2">
+</head>
+<body>
+<div id="splash"><div class="sp-bowl">🍜</div><div class="sp-txt">면요리 지도</div></div>
+
+<header id="topbar">
+  <div class="tb-row">
+    <div class="tb-title"><span class="tb-emoji">🍜</span><span>면요리 지도</span></div>
+    <button id="btnLoc" class="tb-icon" aria-label="내 위치">📍</button>
+  </div>
+  <div class="tb-search">
+    <input id="q" type="search" placeholder="가게명 · 메뉴 · 키워드 검색" autocomplete="off">
+    <button id="qClear" aria-label="지우기">✕</button>
+  </div>
+  <div class="chips" id="chipsGenre"></div>
+  <div class="chips" id="chipsArea"></div>
+  <div class="chips" id="chipsFlag"></div>
+</header>
+
+<main id="view-map" class="view">
+  <div id="map"></div>
+  <div id="mapFallback" class="map-fallback" hidden></div>
+  <div id="mapCount" class="map-count"></div>
+</main>
+
+<main id="view-list" class="view" hidden>
+  <div class="list-head">
+    <span id="listCount"></span>
+    <select id="sortBy">
+      <option value="reco">추천순</option>
+      <option value="score">네이버 평점순</option>
+      <option value="review">리뷰 많은순</option>
+      <option value="my">내 평점순</option>
+      <option value="dist">가까운순</option>
+      <option value="name">가나다순</option>
+    </select>
+  </div>
+  <div id="list"></div>
+</main>
+
+<main id="view-my" class="view" hidden>
+  <div id="myStats"></div>
+  <div id="myList"></div>
+</main>
+
+<main id="view-info" class="view" hidden>
+  <div id="infoBody"></div>
+</main>
+
+<nav id="tabbar">
+  <button data-tab="map" class="on"><i>🗺️</i><span>지도</span></button>
+  <button data-tab="list"><i>📋</i><span>리스트</span></button>
+  <button data-tab="my"><i>⭐</i><span>내 평가</span></button>
+  <button data-tab="info"><i>⚙️</i><span>설정</span></button>
+</nav>
+
+<div id="sheetWrap" hidden>
+  <div id="sheetDim"></div>
+  <section id="sheet" role="dialog" aria-modal="true">
+    <div id="sheetGrip"></div>
+    <div id="sheetBody"></div>
+  </section>
+</div>
+
+<div id="toast"></div>
+
+<script src="config.js?v=2"></script>
+<script src="app.js?v=2"></script>
+</body>
+</html>
