@@ -314,11 +314,11 @@ function drawMarkers(){
   var html = markerHtml(p, showName);
   if(PROVIDER==='naver'){
    var mk = new naver.maps.Marker({ position:new naver.maps.LatLng(p.y,p.x), map:MAP, title:p.n,
-     icon:{ content:html, anchor:new naver.maps.Point(0,0) } });
+     icon:{ content:html, anchor:new naver.maps.Point(15,30), size:new naver.maps.Size(30,30) } });
    naver.maps.Event.addListener(mk,'click',function(){ openSheet(p.id); });
    MARKERS.push(mk);
   } else {
-   var mk2 = L.marker([p.y,p.x], { icon: L.divIcon({ className:'', html:html, iconSize:null }), title:p.n }).addTo(MAP);
+   var mk2 = L.marker([p.y,p.x], { icon: L.divIcon({ className:'', html:html, iconSize:[30,30], iconAnchor:[15,30] }), title:p.n }).addTo(MAP);
    mk2.on('click', function(){ openSheet(p.id); });
    MARKERS.push(mk2);
   }
