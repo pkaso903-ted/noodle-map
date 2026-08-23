@@ -2,6 +2,10 @@
 'use strict';
 var CFG = window.NOODLE_CONFIG || {};
 var LS = 'noodlemap.v1';
+var LSE = 'noodlemap.edit';
+var EDITKEY = 'mh2026';
+var PUB = {}, EDIT = false;
+var OWNER = '민희';
 var DAY = ['일','월','화','수','목','금','토'];
 var GENRES = ['라멘','우동·소바','국수·면','칼국수','냉면·막국수','기타 면요리'];
 var GEMOJI = {'라멘':'🍜','우동·소바':'🥢','국수·면':'🍲','칼국수':'🥟','냉면·막국수':'🧊','기타 면요리':'🍝'};
@@ -36,7 +40,8 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'
 function toast(m){var t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('on');},1900);}
 function loadMy(){ try{ MY = JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ MY={}; } }
 function saveMy(){ try{ localStorage.setItem(LS, JSON.stringify(MY)); }catch(e){ toast('저장 실패'); } }
-function myScore(id){ var r=MY[id]; if(!r)return null; var s=0,c=0; AXES.forEach(function(a){ if(r[a.k]>0){s+=r[a.k];c++;} }); return c? Math.round(s/c*20) : null; }
+function ratings(){ return EDIT ? Object.assign({}, PUB, MY) : PUB; }
+function myScore(id){ var r=ratings()[id]; if(!r)return null; var s=0,c=0; AXES.forEach(function(a){ if(r[a.k]>0){s+=r[a.k];c++;} }); return c? Math.round(s/c*20) : null; }
 
 function hm(t){ if(!t) return null; var p=t.split(':'); return (+p[0])*60+(+p[1]); }
 function todayEntry(p, now){
@@ -85,8 +90,8 @@ function filtered(){
   if(F.flag.indexOf('mich')>=0 && !p.mich) return false;
   if(F.flag.indexOf('tv')>=0 && !(p.tv&&p.tv.length)) return false;
   if(F.flag.indexOf('open')>=0){ var o=openState(p,now); if(o.s!=='open') return false; }
-  if(F.flag.indexOf('visited')>=0 && !MY[p.id]) return false;
-  if(F.flag.indexOf('new')>=0 && MY[p.id]) return false;
+  if(F.flag.indexOf('visited')>=0 && !ratings()[p.id]) return false;
+  if(F.flag.indexOf('new')>=0 && ratings()[p.id]) return false;
   if(q){
    var hay = (p.n+' '+p.g+' '+p.a+' '+p.cat+' '+p.ad+' '+(p.mi||'')+' '+(p.kw||[]).join(' ')+' '+(p.m||[]).map(function(x){return x.n;}).join(' ')).toLowerCase();
    if(hay.indexOf(q)<0) return false;
@@ -110,7 +115,7 @@ function badges(p){
  if(p.mich) h.push('<span class="badge b-mich">미쉐린 '+esc(p.mich.year)+(p.mich.bib?' 빕구르망':'')+'</span>');
  if(p.tv&&p.tv.length) h.push('<span class="badge b-tv">'+esc(p.tv[0].p)+'</span>');
  var m=myScore(p.id);
- if(m!=null) h.push('<span class="badge b-my">내 '+m+'점</span>');
+ if(m!=null) h.push('<span class="badge b-my">'+(EDIT?'내 ':OWNER+' ')+m+'점</span>');
  return h.join('');
 }
 function cardHtml(p){
@@ -143,7 +148,7 @@ function renderChips(){
  areas.sort();
  var a=$('#chipsArea'); a.innerHTML='';
  areas.forEach(function(x){ var b=el('button','chip'+(F.a.indexOf(x)>=0?' on':''), x); b.onclick=function(){ var i=F.a.indexOf(x); if(i>=0)F.a.splice(i,1); else F.a.push(x); refresh(); }; a.appendChild(b); });
- var flags=[['open','🟢 지금 영업중'],['mich','🏅 미쉐린'],['tv','📺 방송출연'],['visited','✅ 방문함'],['new','🆕 미방문']];
+ var flags=[['open','🟢 지금 영업중'],['mich','🏅 미쉐린'],['tv','📺 방송출연'],['visited', EDIT?'✅ 방문함':'✅ 평가있음'],['new', EDIT?'🆕 미방문':'🆕 미평가']];
  var f=$('#chipsFlag'); f.innerHTML='';
  flags.forEach(function(x){ var b=el('button','chip flag'+(F.flag.indexOf(x[0])>=0?' on':''), x[1]); b.onclick=function(){ var i=F.flag.indexOf(x[0]); if(i>=0)F.flag.splice(i,1); else F.flag.push(x[0]); refresh(); }; f.appendChild(b); });
 }
@@ -154,7 +159,7 @@ function naverSearchUrl(p){ return 'https://map.naver.com/p/search/'+encodeURICo
 
 function sheetHtml(p){
  var o=openState(p), now=new Date(), tdc=DAY[now.getDay()];
- var r = MY[p.id]||{};
+ var r = ratings()[p.id]||{};
  var h=[];
  h.push('<img class="sh-hero" src="'+esc(p.img||'')+'" alt="">');
  h.push('<div class="sh-n">'+esc(p.n)+'</div>');
@@ -188,22 +193,42 @@ function sheetHtml(p){
  }
  if(p.mich) h.push('<div class="sec"><div class="sec-t">미쉐린 가이드</div><div class="kv"><b>'+esc(p.mich.year)+' '+(p.mich.bib?'빕구르망':'셀렉티드')+'</b><span><a style="color:#e5b95c" href="'+esc(p.mich.url)+'" target="_blank" rel="noopener">가이드 보기 ↗</a></span></div></div>');
  if(p.kw&&p.kw.length) h.push('<div class="sec"><div class="sec-t">키워드</div><div class="kwbox">'+p.kw.map(function(k){return '<span>#'+esc(k)+'</span>';}).join('')+'</div></div>');
- h.push('<div class="sec"><div class="sec-t">내 평가표</div><div id="rateBox">');
- AXES.forEach(function(ax){
-  var v = r[ax.k]||0;
-  var st=[];
-  for(var i=1;i<=5;i++) st.push('<button data-k="'+ax.k+'" data-v="'+i+'" class="'+(i<=v?'on':'')+'">★</button>');
-  h.push('<div class="rate-row"><div class="rate-lb">'+ax.n+'<em>'+ax.d+'</em></div><div class="stars">'+st.join('')+'</div></div>');
- });
- h.push('</div>');
  var ms = myScore(p.id);
- h.push('<div class="total"><b>총점 (100점 환산)</b><i id="totalNum">'+(ms!=null?ms:'--')+'<small> 점</small></i></div>');
- h.push('<div class="fld"><label>방문일</label><input id="fVisit" type="date" value="'+esc(r.date||'')+'"></div>');
- h.push('<div class="fld"><label>웨이팅 (분)</label><input id="fWait" type="number" min="0" placeholder="0" value="'+esc(r.wait!=null?r.wait:'')+'"></div>');
- h.push('<div class="fld"><label>먹은 메뉴</label><input id="fMenu" type="text" placeholder="예: 이에케라멘 + 차슈추가" value="'+esc(r.menu||'')+'"></div>');
- h.push('<div class="fld"><label>한줄평</label><textarea id="fMemo" rows="3" placeholder="기억하고 싶은 포인트">'+esc(r.memo||'')+'</textarea></div>');
- h.push('<div class="savebar"><button class="bt-save" id="btSave">저장</button>'+(MY[p.id]?'<button class="bt-del" id="btDel">삭제</button>':'')+'</div>');
- h.push('</div>');
+ if(EDIT){
+  h.push('<div class="sec"><div class="sec-t">내 평가표</div><div id="rateBox">');
+  AXES.forEach(function(ax){
+   var v = r[ax.k]||0; var st=[];
+   for(var i=1;i<=5;i++) st.push('<button data-k="'+ax.k+'" data-v="'+i+'" class="'+(i<=v?'on':'')+'">★</button>');
+   h.push('<div class="rate-row"><div class="rate-lb">'+ax.n+'<em>'+ax.d+'</em></div><div class="stars">'+st.join('')+'</div></div>');
+  });
+  h.push('</div>');
+  h.push('<div class="total"><b>총점 (100점 환산)</b><i id="totalNum">'+(ms!=null?ms:'--')+'<small> 점</small></i></div>');
+  h.push('<div class="fld"><label>방문일</label><input id="fVisit" type="date" value="'+esc(r.date||'')+'"></div>');
+  h.push('<div class="fld"><label>웨이팅 (분)</label><input id="fWait" type="number" min="0" placeholder="0" value="'+esc(r.wait!=null?r.wait:'')+'"></div>');
+  h.push('<div class="fld"><label>먹은 메뉴</label><input id="fMenu" type="text" placeholder="예: 이에케라멘 + 차슈추가" value="'+esc(r.menu||'')+'"></div>');
+  h.push('<div class="fld"><label>한줄평</label><textarea id="fMemo" rows="3" placeholder="기억하고 싶은 포인트">'+esc(r.memo||'')+'</textarea></div>');
+  h.push('<div class="savebar"><button class="bt-save" id="btSave">저장</button>'+(MY[p.id]?'<button class="bt-del" id="btDel">삭제</button>':'')+'</div>');
+  h.push('</div>');
+ } else {
+  h.push('<div class="sec"><div class="sec-t">'+esc(OWNER)+'의 평가</div>');
+  if(ms==null){
+   h.push('<div class="ro-none">아직 방문 전인 곳이야.<br>네이버 지도에서 다른 사람 후기를 확인해봐.</div>');
+  } else {
+   AXES.forEach(function(ax){
+    var v=r[ax.k]||0; var s='';
+    for(var i=1;i<=5;i++) s += (i<=v? '★' : '<i>★</i>');
+    h.push('<div class="ro-row"><b>'+ax.n+'</b><span class="ro-star">'+s+'</span></div>');
+   });
+   h.push('<div class="total"><b>총점 (100점 환산)</b><i>'+ms+'<small> 점</small></i></div>');
+   var meta=[];
+   if(r.date) meta.push('<div class="kv"><b>방문일</b><span>'+esc(r.date)+'</span></div>');
+   if(r.wait!=null&&r.wait!=='') meta.push('<div class="kv"><b>웨이팅</b><span>'+esc(r.wait)+'분</span></div>');
+   if(r.menu) meta.push('<div class="kv"><b>먹은 메뉴</b><span>'+esc(r.menu)+'</span></div>');
+   if(meta.length) h.push('<div style="margin-top:10px">'+meta.join('')+'</div>');
+   if(r.memo) h.push('<div class="ro-memo">“'+esc(r.memo)+'”</div>');
+  }
+  h.push('</div>');
+ }
  return h.join('');
 }
 function openSheet(id){
@@ -212,7 +237,8 @@ function openSheet(id){
  $('#sheetBody').innerHTML = sheetHtml(p);
  $('#sheetBody').scrollTop = 0;
  var w=$('#sheetWrap'); w.hidden=false; requestAnimationFrame(function(){ w.classList.add('on'); });
- var draft = Object.assign({}, MY[id]||{});
+ if(!EDIT) return;
+ var draft = Object.assign({}, ratings()[id]||{});
  $('#rateBox').onclick = function(ev){
   var b = ev.target.closest('button'); if(!b) return;
   var k=b.dataset.k, v=+b.dataset.v;
@@ -235,18 +261,18 @@ function openSheet(id){
 function closeSheet(){ var w=$('#sheetWrap'); w.classList.remove('on'); setTimeout(function(){ w.hidden=true; }, 280); }
 
 function renderMy(){
- var ids = Object.keys(MY);
+ var ids = Object.keys(ratings());
  var box=$('#myStats'), list=$('#myList');
- if(!ids.length){ box.innerHTML=''; list.innerHTML=''; list.appendChild(el('div','empty','아직 평가한 가게가 없어.<br>가게를 열어서 별점을 매겨봐.')); return; }
+ if(!ids.length){ box.innerHTML=''; list.innerHTML=''; list.appendChild(el('div','empty', EDIT? '아직 평가한 가게가 없어.<br>가게를 열어서 별점을 매겨봐.' : (esc(OWNER)+'가 아직 평가를 올리지 않았어.'))); return; }
  var scores = ids.map(function(i){return myScore(i);}).filter(function(v){return v!=null;});
  var avg = scores.length? Math.round(scores.reduce(function(a,b){return a+b;},0)/scores.length) : 0;
  var best = 0; ids.forEach(function(i){ var s=myScore(i); if(s>best) best=s; });
- box.innerHTML = '<div class="stats"><div class="stat"><b>'+ids.length+'</b><span>방문 가게</span></div>'
+ box.innerHTML = '<div class="stats"><div class="stat"><b>'+ids.length+'</b><span>'+(EDIT?'방문 가게':(OWNER+' 방문'))+'</span></div>'
   +'<div class="stat"><b>'+avg+'</b><span>평균 점수</span></div>'
   +'<div class="stat"><b>'+best+'</b><span>최고 점수</span></div></div>';
  var byG={};
  ids.forEach(function(i){ var p=PLACES.filter(function(x){return x.id===i;})[0]; if(!p)return; var s=myScore(i); if(s==null)return; (byG[p.g]=byG[p.g]||[]).push(s); });
- var gh=['<div class="gbar"><div class="sec-t">장르별 내 평균</div>'];
+ var gh=['<div class="gbar"><div class="sec-t">'+(EDIT?'장르별 내 평균':'장르별 평균')+'</div>'];
  Object.keys(byG).forEach(function(g){ var a=byG[g]; var m=Math.round(a.reduce(function(x,y){return x+y;},0)/a.length);
   gh.push('<div class="gbar-row"><b>'+GEMOJI[g]+' '+g+'</b><div class="gbar-bg"><div class="gbar-fill" style="width:'+m+'%"></div></div><span>'+m+'점</span></div>'); });
  gh.push('</div>');
@@ -255,7 +281,7 @@ function renderMy(){
  arr.sort(function(a,b){ return (myScore(b.id)||0)-(myScore(a.id)||0); });
  list.innerHTML='';
  arr.forEach(function(p){
-  var r=MY[p.id];
+  var r=ratings()[p.id];
   var c=el('div','card', cardHtml(p) );
   if(r.memo){ var d=el('div','card-desc'); }
   c.onclick=function(){ openSheet(p.id); };
@@ -273,15 +299,27 @@ function renderInfo(){
   +'<div class="infosec"><h3>🎨 화면 테마</h3><p>지도와 어울리는 색조합을 골라봐. 선택은 이 브라우저에 저장돼.</p><div class="themebox">'
   + THEMES.map(function(t){ return '<button class="themebtn'+(curTheme()===t.k?' on':'')+'" data-th="'+t.k+'"><span class="sw">'+t.c.map(function(c){return '<i style="background:'+c+'"></i>';}).join('')+'</span>'+t.n+'</button>'; }).join('')
   + '</div></div>'
-  +'<div class="infosec"><h3>💾 내 평가 백업</h3><p>평가 기록은 이 브라우저에만 저장돼. 폰을 바꾸거나 브라우저를 지우면 사라지니 가끔 백업해줘. 현재 <b>'+n+'곳</b> 저장됨.</p>'
+  +(EDIT ? ('<div class="infosec"><h3>💾 내 평가 관리</h3><p>기록은 이 브라우저에만 저장돼. 현재 <b>'+n+'곳</b> 저장됨. <b>발행</b>을 누르면 방문자들이 볼 수 있는 파일이 만들어져.</p>'
+  +'<button class="infobtn pri" id="btPublish">📤 평가 발행용 파일 만들기</button>'
   +'<button class="infobtn" id="btExport">JSON으로 내보내기</button>'
   +'<button class="infobtn" id="btImport">JSON 불러오기</button>'
-  +'<input type="file" id="fileIn" accept="application/json" hidden></div>'
+  +'<input type="file" id="fileIn" accept="application/json" hidden></div>')
+  : ('<div class="infosec"><h3>👀 보기 전용</h3><p>이 지도는 <b>'+esc(OWNER)+'</b>가 직접 다녀보고 매긴 평가를 공유하는 페이지야. 평가 입력은 안 되고, 가게 정보와 평가를 구경할 수 있어.</p><p>현재 <b>'+Object.keys(PUB).length+'곳</b>에 평가가 올라와 있어.</p></div>'))
   +'<div class="infosec"><h3>🧮 평가 기준</h3><p>국물·면·토핑·가성비·재방문 5개 항목을 각각 5점 만점으로 매기면, 매긴 항목의 평균을 100점으로 환산해 총점이 나와. 항목을 일부만 채워도 평균으로 계산돼.</p></div>'
   +'<div class="infosec"><h3>📊 데이터</h3><p>네이버 지도 기준 · 총 <b>'+PLACES.length+'곳</b> · 기준일 <b>'+(window.__UPDATED||'')+'</b><br>범위: 연남 · 홍대(서교·동교) · 합정 · 망원 · 상수 · 성산<br>평점/리뷰수/영업시간/메뉴가격은 수집 시점 기준이라 실제와 다를 수 있어. 방문 전 네이버 지도에서 한 번 더 확인해줘.</p></div>'
   +'<div class="infosec"><h3>🗺️ 지도 엔진</h3><p id="engineTxt"></p></div>';
  $('#engineTxt').textContent = PROVIDER==='naver' ? '네이버 지도 API 사용중' : (PROVIDER==='leaflet' ? 'OpenStreetMap 사용중 (config.js에 네이버 키를 넣으면 네이버 지도로 바뀜)' : '지도 로딩 실패');
  document.querySelectorAll('.themebtn').forEach(function(b){ b.onclick=function(){ applyTheme(b.dataset.th); renderInfo(); toast('테마를 바꿨어'); }; });
+ if(EDIT){
+  $('#btPublish').onclick = function(){
+   var payload = JSON.stringify({owner: OWNER, updated: new Date().toISOString().slice(0,10), count: Object.keys(MY).length, ratings: MY}, null, 1);
+   var blob = new Blob([payload], {type:'application/json'});
+   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ratings.json'; a.click();
+   if(navigator.clipboard) navigator.clipboard.writeText(payload).catch(function(){});
+   toast('ratings.json 을 만들었어');
+  };
+ }
+ if(!EDIT) return;
  $('#btExport').onclick = function(){
   var blob = new Blob([JSON.stringify({app:'noodlemap', v:1, exported:new Date().toISOString(), data:MY}, null, 2)], {type:'application/json'});
   var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='noodlemap-backup.json'; a.click();
@@ -387,8 +425,22 @@ function tab(name){
 
 function boot(){
  applyTheme(curTheme());
+ try{
+  var qs=new URLSearchParams(location.search);
+  if(qs.has('edit')){
+   if(qs.get('edit')===EDITKEY){ localStorage.setItem(LSE,'1'); }
+   else { localStorage.removeItem(LSE); }
+   history.replaceState(null,'',location.pathname);
+  }
+  EDIT = localStorage.getItem(LSE)==='1';
+ }catch(e){ EDIT=false; }
+ try{ var tb=document.querySelector('#tabbar button[data-tab="my"] span'); if(tb) tb.textContent = EDIT ? '내 평가' : '평가'; }catch(e){}
  loadMy();
- fetch('data.json?v=' + (window.__V||'1')).then(function(r){return r.json();}).then(function(j){
+ fetch('ratings.json?v='+Date.now()).then(function(r){ return r.ok? r.json() : {}; }).catch(function(){ return {}; }).then(function(pj){
+  PUB = (pj && pj.ratings) || {};
+  if(pj && pj.owner) OWNER = pj.owner;
+  return fetch('data.json?v=' + (window.__V||'1')).then(function(r){return r.json();});
+ }).then(function(j){
   PLACES = j.places; window.__UPDATED = j.updated;
   renderChips(); renderList(); initMap(); tab('map');
   setTimeout(function(){ $('#splash').classList.add('gone'); }, 250);
