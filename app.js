@@ -241,7 +241,7 @@ function openSheet(id){
  if(EDIT && $('#btGoRate')){
   $('#btGoRate').onclick = function(){
    var box=$('#rateBox'); var body=$('#sheetBody');
-   if(box&&body) body.scrollTo({top: box.offsetTop - 60, behavior:'smooth'});
+   if(box&&body) body.scrollTop = box.offsetTop - 60;
   };
  }
  if(!EDIT) return;
