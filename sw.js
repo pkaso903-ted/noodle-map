@@ -1,4 +1,4 @@
-var CACHE = 'noodlemap-v6';
+var CACHE = 'noodlemap-v7';
 var ASSETS = ['./','./index.html','./styles.css','./app.js','./config.js','./data.json','./ratings.json','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', function(e){ self.skipWaiting(); e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(ASSETS).catch(function(){}); })); });
 self.addEventListener('activate', function(e){ e.waitUntil(caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return k===CACHE?null:caches.delete(k); })); }).then(function(){ return self.clients.claim(); })); });
