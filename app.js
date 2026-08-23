@@ -169,7 +169,8 @@ function sheetHtml(p){
  h.push('<div class="card-meta" style="margin-top:10px"><span class="star">★ '+(p.sc!=null?p.sc:'-')+'</span><span class="rev">방문 '+p.vr.toLocaleString()+' · 블로그 '+p.br.toLocaleString()+'</span><span class="'+(o.s==='open'?'open-y':(o.s==='break'?'open-b':'open-n'))+'">'+esc(o.t)+(o.sub?(' · '+esc(o.sub)):'')+'</span></div>');
  h.push('<div class="sh-row"><a class="sh-btn pri" href="'+naverUrl(p)+'" target="_blank" rel="noopener">네이버 지도</a>'
   +'<a class="sh-btn" href="'+naverSearchUrl(p)+'" target="_blank" rel="noopener">길찾기</a>'
-  +(p.ph?('<a class="sh-btn" href="tel:'+esc(p.ph)+'">전화</a>'):'')+'</div>');
+  +(p.ph?('<a class="sh-btn" href="tel:'+esc(p.ph)+'">전화</a>'):'')
+  +(EDIT?'<button class="sh-btn" id="btGoRate">✍️ 평가</button>':'')+'</div>');
  h.push('<div class="sec"><div class="sec-t">영업시간</div>');
  if(p.h&&p.h.days.length){
   p.h.days.forEach(function(d){
@@ -237,6 +238,12 @@ function openSheet(id){
  $('#sheetBody').innerHTML = sheetHtml(p);
  $('#sheetBody').scrollTop = 0;
  var w=$('#sheetWrap'); w.hidden=false; requestAnimationFrame(function(){ w.classList.add('on'); });
+ if(EDIT && $('#btGoRate')){
+  $('#btGoRate').onclick = function(){
+   var box=$('#rateBox'); var body=$('#sheetBody');
+   if(box&&body) body.scrollTo({top: box.offsetTop - 60, behavior:'smooth'});
+  };
+ }
  if(!EDIT) return;
  var draft = Object.assign({}, ratings()[id]||{});
  $('#rateBox').onclick = function(ev){
@@ -296,6 +303,8 @@ function renderInfo(){
   +'<p><b>아이폰(Safari)</b></p><ol><li>하단 공유 버튼 <b>⬆️</b> 탭</li><li>“홈 화면에 추가” 선택</li><li>“추가” 탭</li></ol>'
   +'<p style="margin-top:10px"><b>안드로이드(Chrome)</b></p><ol><li>우측 상단 <b>⋮</b> 탭</li><li>“홈 화면에 추가” 또는 “앱 설치” 선택</li></ol>'
   +'<button class="infobtn pri" id="btInstall" style="display:none">앱으로 설치하기</button></div>'
+  +(EDIT ? '<div class="infosec"><h3>🔓 기록 모드 켜짐</h3><p>이 기기에서는 가게 상세 맨 아래에서 <b>직접 평가를 입력</b>할 수 있어.</p><button class="infobtn" id="btLock">기록 모드 끄기</button></div>'
+  : '<div class="infosec"><h3>🔒 기록 모드</h3><p>주인용 암호를 넣으면 이 기기에서 평가를 입력할 수 있어. 홈 화면에 추가한 앱은 사파리와 저장소가 분리되어 있어서, 앱 안에서 한 번 더 풀어줘야 해.</p><div class="fld"><input id="pw" type="password" placeholder="암호 입력" autocomplete="off"></div><button class="infobtn pri" id="btUnlock">잠금 해제</button></div>')
   +'<div class="infosec"><h3>🎨 화면 테마</h3><p>지도와 어울리는 색조합을 골라봐. 선택은 이 브라우저에 저장돼.</p><div class="themebox">'
   + THEMES.map(function(t){ return '<button class="themebtn'+(curTheme()===t.k?' on':'')+'" data-th="'+t.k+'"><span class="sw">'+t.c.map(function(c){return '<i style="background:'+c+'"></i>';}).join('')+'</span>'+t.n+'</button>'; }).join('')
   + '</div></div>'
@@ -310,6 +319,17 @@ function renderInfo(){
   +'<div class="infosec"><h3>🗺️ 지도 엔진</h3><p id="engineTxt"></p></div>';
  $('#engineTxt').textContent = PROVIDER==='naver' ? '네이버 지도 API 사용중' : (PROVIDER==='leaflet' ? 'OpenStreetMap 사용중 (config.js에 네이버 키를 넣으면 네이버 지도로 바뀜)' : '지도 로딩 실패');
  document.querySelectorAll('.themebtn').forEach(function(b){ b.onclick=function(){ applyTheme(b.dataset.th); renderInfo(); toast('테마를 바꿨어'); }; });
+ if(!EDIT){
+  var doUnlock = function(){
+   var v = ($('#pw').value||'').trim();
+   if(v===EDITKEY){ try{ localStorage.setItem(LSE,'1'); }catch(e){} toast('기록 모드를 켰어'); setTimeout(function(){ location.reload(); }, 700); }
+   else { toast('암호가 달라'); $('#pw').value=''; }
+  };
+  $('#btUnlock').onclick = doUnlock;
+  $('#pw').onkeydown = function(e){ if(e.key==='Enter') doUnlock(); };
+ } else {
+  $('#btLock').onclick = function(){ try{ localStorage.removeItem(LSE); }catch(e){} toast('기록 모드를 껐어'); setTimeout(function(){ location.reload(); }, 700); };
+ }
  if(EDIT){
   $('#btPublish').onclick = function(){
    var payload = JSON.stringify({owner: OWNER, updated: new Date().toISOString().slice(0,10), count: Object.keys(MY).length, ratings: MY}, null, 1);
