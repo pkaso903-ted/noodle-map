@@ -203,3 +203,9 @@ button,input,select,textarea{font-family:inherit;color:inherit}
   #sheet{max-width:640px;left:50%;transform:translate(-50%,100%)}
   #sheetWrap.on #sheet{transform:translate(-50%,0)}
 }
+.ro-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.ro-row b{font-weight:700}
+.ro-star{color:var(--pt2);font-size:15px;letter-spacing:1.5px}
+.ro-star i{color:var(--starOff);font-style:normal}
+.ro-memo{margin-top:11px;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:13px;line-height:1.7;color:var(--tx)}
+.ro-none{text-align:center;color:var(--tx3);font-size:13px;padding:26px 10px;line-height:1.9}
